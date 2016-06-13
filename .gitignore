@@ -2,3 +2,4 @@ MNIST_data
 *.swp
 *.pyc
 *.pyo
+*/__pycache__
