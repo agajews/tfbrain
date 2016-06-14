@@ -16,6 +16,6 @@ class Model(object):
 
     def compute_preds(self, xs):
         feed_dict = create_x_feed_dict(self.input_vars, xs)
-        feed_dict.update(create_supp_test_feed_dict(self.model))
-        preds = self.model.y_hat.eval(feed_dict=feed_dict)
+        feed_dict.update(create_supp_test_feed_dict(self))
+        preds = self.y_hat.eval(feed_dict=feed_dict)
         return preds

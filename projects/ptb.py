@@ -127,7 +127,7 @@ class PTBModel(object):
 class SmallConfig(object):
     """Small config."""
     init_scale = 0.1
-    learning_rate = 1.0
+    learning_rate = 0.0
     max_grad_norm = 5
     num_layers = 2
     num_steps = 20

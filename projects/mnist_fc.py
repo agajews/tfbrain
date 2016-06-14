@@ -1,7 +1,7 @@
 from tfbrain import nonlin
 from tfbrain.layers import InputLayer, FullyConnectedLayer
 from tfbrain.trainers import Trainer
-from tfbrain.loss import CrossentropyLoss
+from tfbrain.loss import Crossentropy
 from tfbrain.optim import SGDOptim
 from tfbrain.models import Model
 from tfbrain.acc import CatAcc
@@ -24,7 +24,7 @@ def train_fc():
                    'learning_rate': 0.5,
                    'num_updates': 2000}
     model = MnistFCModel(hyperparams)
-    trainer = Trainer(model, hyperparams, CrossentropyLoss, CatAcc, SGDOptim)
+    trainer = Trainer(model, hyperparams, Crossentropy, CatAcc, SGDOptim)
 
     mnist = load_data()
 

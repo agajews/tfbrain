@@ -3,7 +3,7 @@ from tfbrain.layers import InputLayer, FullyConnectedLayer, \
     ReshapeLayer, Conv2DLayer, MaxPool2DLayer, FlattenLayer, \
     DropoutLayer
 from tfbrain.trainers import Trainer
-from tfbrain.loss import CrossentropyLoss
+from tfbrain.loss import Crossentropy
 from tfbrain.optim import AdamOptim
 from tfbrain.models import Model
 from tfbrain.acc import CatAcc
@@ -33,7 +33,7 @@ def train_conv():
                    'learning_rate': 1e-4,
                    'num_updates': 20000}
     model = MnistConvModel(hyperparams)
-    trainer = Trainer(model, hyperparams, CrossentropyLoss, CatAcc, AdamOptim)
+    trainer = Trainer(model, hyperparams, Crossentropy, CatAcc, AdamOptim)
 
     mnist = load_data()
 

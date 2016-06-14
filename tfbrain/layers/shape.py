@@ -42,30 +42,34 @@ class ReshapeLayer(Layer):
         return tf.reshape(incoming_var, self.output_shape)
 
 
-class SliceLayer(Layer):
+class SeqSliceLayer(Layer):
 
     def __init__(self,
                  incoming,
                  col=-1,
-                 axis=1,
                  **kwargs):
         Layer.__init__(self, [incoming], **kwargs)
         incoming_shape = incoming.output_shape
         self.incoming_shape = incoming_shape
-        self.output_shape = incoming_shape[:axis] + \
-            incoming_shape[axis + 1:]
+        self.output_shape = incoming_shape[:1] + \
+            incoming_shape[2:]
+        self.check_compatible(incoming)
         self.col = col
-        self.axis = axis
+
+    def check_compatible(self, incoming):
+        if not len(incoming.output_shape) == 3:
+            raise Exception(('Incoming layer\'s output shape %s '
+                             'incompatible, this is only for sequences')
+                            % str(incoming.output_shape))
 
     def get_base_name(self):
         return 'slice'
 
     def get_output(self, incoming_var):
-        begin = [0] * len(self.incoming_shape)
-        begin[self.axis] = self.col
-        size = [-1] * len(self.incoming_shape)
-        size[self.axis] = 1
-        return tf.slice(incoming_var, begin, size)
+        if self.col == -1:
+            return tf.reverse(incoming_var, [False, True, False])[:, 0, :]
+        else:
+            return incoming_var[:, self.col, :]
 
 
 class MergeLayer(Layer):

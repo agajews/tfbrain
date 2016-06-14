@@ -21,5 +21,7 @@ class CatAcc(Acc):
 
 class Perplexity(Acc):
 
-    def build(self, y_hat):
-        return tf.exp(-tf.reduce_mean(tf.reduce_sum(tf.log(y_hat))))
+    def build(self, y_hat, y):
+        return tf.exp(tf.reduce_mean(
+            -tf.reduce_sum(y * tf.log(y_hat),
+                           reduction_indices=[1])))

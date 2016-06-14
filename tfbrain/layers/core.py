@@ -60,8 +60,10 @@ class InputLayer(Layer):
 
     def __init__(self,
                  shape,
+                 dtype=tf.float32,
                  **kwargs):
         Layer.__init__(self, [], **kwargs)
+        self.dtype = dtype
         self.output_shape = shape
         self.initialize_placeholder()
 
@@ -69,7 +71,7 @@ class InputLayer(Layer):
         return 'input'
 
     def initialize_placeholder(self):
-        self.placeholder = tf.placeholder(tf.float32,
+        self.placeholder = tf.placeholder(self.dtype,
                                           shape=self.output_shape)
 
     def get_output(self, incoming_var):

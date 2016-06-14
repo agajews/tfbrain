@@ -15,9 +15,13 @@ def labels_to_one_hot(labels, num_categories):
 
 def indices_to_seq_data(indices, seqlength):
     num_examples = len(indices) - seqlength
-    x = np.zeros((num_examples, seqlength))
+    text = np.zeros((num_examples, seqlength))
+    targets = np.zeros((num_examples,),
+                       dtype='int32')
     for example_num in range(0, len(indices) - seqlength):
         start = example_num
         end = start + seqlength
-        x[example_num, :] = indices[start:end]
-    return x
+        text[example_num, :] = indices[start:end]
+        targets[example_num] = indices[end]
+    return {'text': text,
+            'targets': targets}
