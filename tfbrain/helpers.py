@@ -105,3 +105,28 @@ def create_supp_train_feed_dict(model):
 def create_supp_test_feed_dict(model):
     supp_feed_dict = get_supp_test_feed_dict(model.net)
     return supp_feed_dict
+
+
+def create_minibatch_iterator(train_xs,
+                              train_y,
+                              batch_preprocessor,
+                              batch_size):
+    inputs = {}
+    inputs.update(train_xs)
+    inputs['y'] = train_y
+    minibatches = iterate_minibatches(
+        inputs, batch_size=batch_size)
+
+    if batch_preprocessor is None:
+        return minibatches
+    else:
+        return map(batch_preprocessor, minibatches)
+
+
+def avg_over_batches(minibatches, fn):
+        res = 0
+        num_batches = 0
+        for batch in minibatches:
+            res += fn(batch)
+            num_batches += 1
+        return res / num_batches

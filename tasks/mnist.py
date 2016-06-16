@@ -6,7 +6,7 @@ import os
 
 import numpy as np
 
-from datasets import data_fnm
+from tasks import data_fnm
 
 from .helpers import labels_to_one_hot
 

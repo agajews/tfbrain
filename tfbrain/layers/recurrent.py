@@ -85,17 +85,14 @@ class BasicRNNLayer(Layer):
             tf.zeros([self.incoming_shape[2], self.num_nodes]))
         return initial_hidden
 
-    def transform_states(self, states):
-        return states
-
     def get_output(self, incoming_var):
         initial_hidden = self.get_initial_hidden(incoming_var)
+
         incoming_var = tf.transpose(incoming_var, (1, 0, 2))
         states = tf.scan(self.recurrence_fn,
                          incoming_var,
                          initializer=initial_hidden)
 
-        states = self.transform_states(states)
         outputs = tf.map_fn(self.output_fn,
                             states)
 
@@ -198,7 +195,7 @@ class LSTMLayer(BasicRNNLayer):
         W_f_shape = (input_size, self.num_nodes)
         U_f_shape = (self.num_nodes, self.num_nodes)
 
-        W_g_shape = (self.num_nodes, self.num_nodes)
+        W_g_shape = (input_size, self.num_nodes)
         U_g_shape = (self.num_nodes, self.num_nodes)
 
         W_c_shape = (input_size, self.num_nodes)
@@ -245,23 +242,31 @@ class LSTMLayer(BasicRNNLayer):
         h_prev, c_prev = tf.unpack(h_prev_tuple)
 
         i = self.nonlin_i(
-            tf.matmul(x_t, self.W_i) +
-            tf.matmul(h_prev, self.U_i) +
+            tf.matmul(x_t, self.W_i,
+                      name='i_w') +
+            tf.matmul(h_prev, self.U_i,
+                      name='i_u') +
             self.b_i)
 
         f = self.nonlin_i(
-            tf.matmul(x_t, self.W_f) +
-            tf.matmul(h_prev, self.U_f) +
+            tf.matmul(x_t, self.W_f,
+                      name='f_w') +
+            tf.matmul(h_prev, self.U_f,
+                      name='f_u') +
             self.b_f)
 
         g = self.nonlin_i(
-            tf.matmul(x_t, self.W_g) +
-            tf.matmul(h_prev, self.U_g) +
+            tf.matmul(x_t, self.W_g,
+                      name='g_w') +
+            tf.matmul(h_prev, self.U_g,
+                      name='g_u') +
             self.b_g)
 
         c_tilda = self.nonlin_c(
-            tf.matmul(x_t, self.W_c) +
-            tf.matmul(h_prev, self.U_c) +
+            tf.matmul(x_t, self.W_c,
+                      name='ct_w') +
+            tf.matmul(h_prev, self.U_c,
+                      name='ct_u') +
             self.b_c)
 
         c = f * c_prev + i * c_tilda
@@ -270,10 +275,8 @@ class LSTMLayer(BasicRNNLayer):
 
         return tf.pack([h, c])
 
-    def transform_states(self, states):
-        return states[:, 0, :, :]
-
-    def output_fn(self, h):
+    def output_fn(self, states_tuple):
+        h = states_tuple[0, :, :]
         return self.nonlin_o(
             tf.matmul(h, self.W_o) +
             self.b_o)

@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from tensorflow.models.rnn.ptb import reader
 
-from datasets import data_fnm
+from tasks import data_fnm
 
 data_fnm = os.path.join(data_fnm, 'ptb')
 
@@ -88,7 +88,7 @@ class PTBModel(object):
         self._lr = tf.Variable(0.0, trainable=False)
         tvars = tf.trainable_variables()
         grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars),
-                                                                            config.max_grad_norm)
+                                          config.max_grad_norm)
         optimizer = tf.train.GradientDescentOptimizer(self.lr)
         self._train_op = optimizer.apply_gradients(zip(grads, tvars))
 
@@ -127,7 +127,7 @@ class PTBModel(object):
 class SmallConfig(object):
     """Small config."""
     init_scale = 0.1
-    learning_rate = 0.0
+    learning_rate = 1.0
     max_grad_norm = 5
     num_layers = 2
     num_steps = 20

@@ -8,7 +8,7 @@ from tfbrain.optim import AdamOptim
 from tfbrain.models import Model
 from tfbrain.acc import CatAcc
 
-from datasets.mnist import load_data
+from tasks.mnist import load_data
 
 
 class MnistConvModel(Model):

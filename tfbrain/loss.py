@@ -1,5 +1,8 @@
 import tensorflow as tf
 
+from tfbrain.helpers import create_x_feed_dict, \
+    create_y_feed_dict, create_supp_test_feed_dict
+
 
 class Loss(object):
 
@@ -12,10 +15,18 @@ class Loss(object):
         y: a TF placeholder representing the expected output'''
         raise NotImplementedError()
 
+    def compute(self, model, xs, y_var, y_val):
+        feed_dict = create_x_feed_dict(model.input_vars, xs)
+        feed_dict.update(create_y_feed_dict(y_var, y_val))
+        feed_dict.update(create_supp_test_feed_dict(model))
+        loss = self.loss.eval(feed_dict=feed_dict)
+        return loss
+
 
 class Crossentropy(Loss):
 
     def build(self, y_hat, y):
-        return tf.reduce_mean(
-            -tf.reduce_sum(y * tf.log(y_hat),
+        self.loss = tf.reduce_mean(
+            -tf.reduce_sum(y * tf.log(tf.clip_by_value(y_hat, 1e-10, 1.0)),
                            reduction_indices=[1]))
+        return self.loss
