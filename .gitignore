@@ -1,4 +1,5 @@
 data
+params
 *.swp
 *.pyc
 *.pyo
