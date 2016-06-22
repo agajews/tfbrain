@@ -1,5 +1,7 @@
-data
-params
+data/*
+params/*
+logs/*
+*.log
 *.swp
 *.pyc
 *.pyo
