@@ -2,6 +2,8 @@ import numpy as np
 
 import tensorflow as tf
 
+from memory_profiler import profile
+
 
 def get_output(net):
     if len(net.incoming) == 0:
@@ -26,7 +28,30 @@ def get_all_params(net):
     return all_params
 
 
-def get_all_params_values(net, sess=None):
+def get_all_params_copies(all_params):
+    copies = {}
+    for layer_name in all_params:
+        copies[layer_name] = {}
+        for param_name in all_params[layer_name]:
+            param = all_params[layer_name][param_name]
+            copies[layer_name][param_name] = tf.Variable(param.initialized_value())
+    return copies
+
+
+def get_all_params_values(all_params, sess=None):
+    sess = resolve_sess(sess)
+    all_params_values = {}
+    for layer_name in all_params:
+        layer_params = {}
+        for param_name in all_params[layer_name]:
+            param = all_params[layer_name][param_name]
+            layer_params[param_name] = sess.run(param)
+        all_params_values[layer_name] = layer_params
+
+    return all_params_values
+
+
+def get_all_net_params_values(net, sess=None):
     sess = resolve_sess(sess)
     all_params = get_all_params(net)
     all_params_values = {}
@@ -38,6 +63,43 @@ def get_all_params_values(net, sess=None):
         all_params_values[layer_name] = layer_params
 
     return all_params_values
+
+
+@profile
+def set_all_params_values(net, params_values, sess=None):
+    sess = resolve_sess(sess)
+    all_params = get_all_params(net)
+    for layer_name in all_params:
+        for param_name in all_params[layer_name]:
+            param = all_params[layer_name][param_name]
+            target_param = params_values[layer_name][param_name]
+            assign_op = param.assign(target_param)
+            sess.run(assign_op)
+
+
+def set_all_params_ops(dest_params, src_params, sess=None):
+    sess = resolve_sess(sess)
+    ops = []
+    for layer_name in dest_params:
+        for param_name in dest_params[layer_name]:
+            param = dest_params[layer_name][param_name]
+            target_param = src_params[layer_name][param_name]
+            assign_op = param.assign(target_param)
+            ops.append(assign_op)
+    return ops
+
+
+def set_all_net_params_ops(net, src_params, sess=None):
+    sess = resolve_sess(sess)
+    all_params = get_all_params(net)
+    ops = []
+    for layer_name in all_params:
+        for param_name in all_params[layer_name]:
+            param = all_params[layer_name][param_name]
+            target_param = src_params[layer_name][param_name]
+            assign_op = param.assign(target_param)
+            ops.append(assign_op)
+    return ops
 
 
 def get_supp_train_feed_dict(layer):
@@ -110,10 +172,13 @@ def create_supp_test_feed_dict(model):
 def create_minibatch_iterator(train_xs,
                               train_y,
                               batch_preprocessor,
-                              batch_size):
+                              batch_size,
+                              train_mask=None):
     inputs = {}
     inputs.update(train_xs)
     inputs['y'] = train_y
+    if train_mask is not None:
+        inputs['mask'] = train_mask
     minibatches = iterate_minibatches(
         inputs, batch_size=batch_size)
 

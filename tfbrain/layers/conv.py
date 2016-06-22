@@ -27,8 +27,8 @@ class Conv2DLayer(Layer):
                  inner_strides=(1, 1),
                  pad='SAME',
                  nonlin=nonlin.relu,
-                 W_init=init.truncated_normal,
-                 b_init=init.constant,
+                 W_init=init.truncated_normal(),
+                 b_init=init.constant(),
                  W=None,
                  b=None,
                  **kwargs):

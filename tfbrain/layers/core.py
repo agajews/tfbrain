@@ -84,8 +84,8 @@ class FullyConnectedLayer(Layer):
                  incoming,
                  num_nodes,
                  nonlin=nonlin.relu,
-                 W_init=init.truncated_normal,
-                 b_init=init.constant,
+                 W_init=init.truncated_normal(),
+                 b_init=init.constant(),
                  W=None,
                  b=None,
                  **kwargs):

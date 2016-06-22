@@ -1,20 +1,14 @@
-from tfbrain import nonlin
-from tfbrain.layers import InputLayer, FullyConnectedLayer
-from tfbrain.trainers import Trainer
-from tfbrain.loss import Crossentropy
-from tfbrain.optim import SGDOptim
-from tfbrain.models import Model
-from tfbrain.acc import CatAcc
+import tfbrain as tb
 
 from tasks.mnist import load_data
 
 
-class MnistFCModel(Model):
+class MnistFCModel(tb.Model):
 
     def build_net(self):
-        i_image = InputLayer(shape=(None, 784))
-        net = FullyConnectedLayer(i_image, 50, nonlin=nonlin.tanh)
-        net = FullyConnectedLayer(net, 10, nonlin=nonlin.softmax)
+        i_image = tb.ly.InputLayer(shape=(None, 784))
+        net = tb.ly.FullyConnectedLayer(i_image, 50, nonlin=tb.nonlin.tanh)
+        net = tb.ly.FullyConnectedLayer(net, 10, nonlin=tb.nonlin.softmax)
         self.net = net
         self.input_vars = {'image': i_image.placeholder}
 
@@ -22,9 +16,14 @@ class MnistFCModel(Model):
 def train_fc():
     hyperparams = {'batch_size': 50,
                    'learning_rate': 0.5,
-                   'num_updates': 2000}
+                   'num_updates': 2000,
+                   'grad_norm_clip': 5}
     model = MnistFCModel(hyperparams)
-    trainer = Trainer(model, hyperparams, Crossentropy, CatAcc, SGDOptim)
+    loss = tb.Crossentropy(hyperparams)
+    acc = tb.CatAcc(hyperparams)
+    evaluator = tb.Evaluator(hyperparams, loss, acc)
+    optim = tb.SGDOptim(hyperparams)
+    trainer = tb.Trainer(model, hyperparams, loss, optim, evaluator)
 
     mnist = load_data()
 
@@ -35,7 +34,7 @@ def train_fc():
 
     trainer.train(train_xs, train_y,
                   val_xs, val_y)
-    trainer.eval(val_xs, val_y)
+    evaluator.eval(model, val_xs, val_y)
 
 
 if __name__ == '__main__':

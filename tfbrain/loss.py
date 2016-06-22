@@ -23,10 +23,30 @@ class Loss(object):
         return loss
 
 
+class MSE(Loss):
+
+    def build(self, y_hat, y, mask=None):
+        if mask is None:
+            self.loss = tf.reduce_mean(
+                tf.square(y - y_hat))
+        else:
+            self.loss = tf.reduce_mean(
+                tf.reduce_sum(tf.square(mask * (y - y_hat)),
+                              reduction_indices=[1]))
+
+        return self.loss
+
+
 class Crossentropy(Loss):
 
-    def build(self, y_hat, y):
-        self.loss = tf.reduce_mean(
-            -tf.reduce_sum(y * tf.log(tf.clip_by_value(y_hat, 1e-10, 1.0)),
-                           reduction_indices=[1]))
+    def build(self, y_hat, y, mask=None):
+        if mask is None:
+            self.loss = tf.reduce_mean(
+                -tf.reduce_sum(y * tf.log(tf.clip_by_value(y_hat, 1e-10, 1.0)),
+                               reduction_indices=[1]))
+        else:
+            self.loss = tf.reduce_mean(
+                -tf.reduce_sum(
+                    mask * y * tf.log(tf.clip_by_value(y_hat, 1e-10, 1.0)),
+                    reduction_indices=[1]))
         return self.loss

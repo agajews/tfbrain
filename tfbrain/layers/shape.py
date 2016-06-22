@@ -53,7 +53,7 @@ class SeqSliceLayer(Layer):
         self.incoming_shape = incoming_shape
         self.output_shape = incoming_shape[:1] + \
             incoming_shape[2:]
-        self.check_compatible(incoming)
+        # self.check_compatible(incoming)
         self.col = col
 
     def check_compatible(self, incoming):
@@ -67,9 +67,24 @@ class SeqSliceLayer(Layer):
 
     def get_output(self, incoming_var):
         if self.col == -1:
-            return tf.reverse(incoming_var, [False, True, False])[:, 0, :]
+            incoming_var = tf.reverse(
+                incoming_var,
+                [False, True] + [False] * (len(self.incoming_shape) - 2))
+            col = 0
         else:
-            return incoming_var[:, self.col, :]
+            col = self.col
+        begin = [0] * len(self.incoming_shape)
+        begin[1] = col
+        size = [-1] * len(self.incoming_shape)
+        size[1] = 1
+        output_shape = []
+        for shape in self.output_shape:
+            if shape is not None:
+                output_shape.append(shape)
+            else:
+                output_shape.append(-1)
+        return tf.reshape(tf.slice(incoming_var, begin, size),
+                          output_shape)
 
 
 class MergeLayer(Layer):

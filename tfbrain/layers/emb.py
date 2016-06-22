@@ -10,7 +10,7 @@ class EmbeddingLayer(Layer):
                  incoming,
                  num_nodes,
                  num_cats,
-                 E_init=init.truncated_normal,
+                 E_init=init.truncated_normal(),
                  E=None,
                  **kwargs):
         Layer.__init__(self, [incoming], **kwargs)
