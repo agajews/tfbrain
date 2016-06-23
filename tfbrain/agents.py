@@ -135,7 +135,8 @@ class DQNAgent(object):
             return self.actions[greedy_ind]
 
     def have_experience(self, experience):
-        self.experiences.append(experience)
+        if self.training:
+            self.experiences.append(experience)
         # print('Action: %s' % str(experience[1]))
         # print('Reward: %f' % experience[2])
 
