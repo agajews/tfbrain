@@ -1,5 +1,7 @@
 from collections import deque
 
+import copy
+
 import random
 
 import numpy as np
@@ -10,7 +12,8 @@ import tensorflow as tf
 
 from .helpers import get_all_params, \
     get_all_params_copies, set_all_params_ops, \
-    set_all_net_params_ops, get_all_params_values
+    set_all_net_params_ops, get_all_params_values, \
+    ShelfDeque
 
 
 class DQNAgent(object):
@@ -18,7 +21,10 @@ class DQNAgent(object):
         self.hyperparams = hyperparams
         self.q_model = q_model
         self.q_trainer = q_trainer
-        self.experiences = deque(maxlen=hyperparams['experience_replay_len'])
+        # self.experiences = deque(maxlen=hyperparams['experience_replay_len'])
+        self.experiences = ShelfDeque(
+            'data/experiences.db',
+            maxlen=hyperparams['experience_replay_len'])
 
     def set_actions(self, actions):
         self.actions = actions
@@ -34,6 +40,12 @@ class DQNAgent(object):
             train_mask_shape=(None, len(self.actions)))
         self.sess = self.q_trainer.sess
         self.build_vars()
+        epsilon = self.hyperparams['epsilon']
+        self.epsilon = epsilon[0]
+        self.epsilon_step = (epsilon[1] - epsilon[0]) / epsilon[2]
+        self.training = True
+        self.recent_pred_q = deque(
+            maxlen=self.hyperparams['num_recent_rewards'])
 
     def build_vars(self):
         self.model_params = get_all_params(self.q_model.net)
@@ -112,11 +124,13 @@ class DQNAgent(object):
         return preds
 
     def choose_action(self, state):
-        epsilon = self.hyperparams['epsilon']
-        if random.random() < epsilon:
+        if random.random() < self.epsilon:
+            if self.epsilon > self.hyperparams['epsilon'][1]:
+                self.epsilon += self.epsilon_step
             return random.choice(self.actions)
         else:
             preds = self.compute_single_state_preds(state)
+            self.recent_pred_q.append(preds.max())
             greedy_ind = np.argmax(preds)
             return self.actions[greedy_ind]
 
@@ -127,7 +141,8 @@ class DQNAgent(object):
 
     def gen_train_data(self):
         batch_size = self.hyperparams['batch_size']
-        experiences = random.sample(self.experiences, batch_size)
+        # experiences = random.sample(self.experiences, batch_size)
+        experiences = self.experiences.sample(batch_size)
 
         # preds = self.compute_single_state_preds(experiences[0][3])
         # print('Model preds:')
@@ -169,9 +184,31 @@ class DQNAgent(object):
                 build=False, num_updates=num_updates,
                 display_interval=display_interval)
 
+    def start_eval_mode(self):
+        self.saved_epsilon_step = self.epsilon_step
+        self.saved_epsilon = self.epsilon
+        self.saved_recent_pred_q = copy.copy(self.recent_pred_q)
+        self.epsilon_step = 0
+        self.epsilon = self.hyperparams['eval_epsilon']
+        self.training = False
+
+    def end_eval_mode(self):
+        self.epsilon_step = self.saved_epsilon_step
+        self.epsilon = self.saved_epsilon
+        self.recent_pred_q = self.saved_recent_pred_q
+        self.training = True
+
     def learn(self, frame_num):
-        if frame_num % self.hyperparams['target_update_freq'] == 0:
-            self.train_net(display_interval=100)
+        if self.training and \
+                frame_num % self.hyperparams['target_update_freq'] == 0:
             self.update_target_weights()
+        if frame_num % self.hyperparams['display_freq'] == 0:
+            if self.training:
+                self.train_net(display_interval=100)
+            print('Epsilon: %f' % self.epsilon)
+            if len(self.recent_pred_q) > 0:
+                print('Avg recent pred q: %f' %
+                      (sum(self.recent_pred_q) / len(self.recent_pred_q)))
         else:
-            self.train_net()
+            if self.training:
+                self.train_net()

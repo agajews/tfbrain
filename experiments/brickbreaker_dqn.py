@@ -29,24 +29,27 @@ class DQNModel(tb.Model):
 
 def train_dqn():
     hyperparams = {'batch_size': 32,
-                   'learning_rate': 1e-5,
+                   'learning_rate': 1e-3,
                    'grad_norm_clip': 5,
-                   'epsilon': 0.1,
+                   'epsilon': (1.0, 0.1, int(1e6)),
                    'frame_skip': 4,
-                   'reward_discount': 0.99,
-                   'target_update_freq': 100,
-                   'updates_per_iter': 1,
+                   'reward_discount': 0.9,
+                   'target_update_freq': 1000,
+                   'display_freq': 100,
+                   'updates_per_iter': 2,
                    'screen_resize': (110, 84),
                    'experience_replay_len': int(1e6),
                    'state_len': 4,
                    'num_frames': int(1e7),
                    'save_freq': 100000,
+                   'eval_freq': 10,
+                   'eval_epsilon': 0.05,
                    'num_recent_rewards': 100}
     q_model = DQNModel(hyperparams)
     loss = tb.MSE(hyperparams)
     acc = None
     evaluator = tb.Evaluator(hyperparams, loss, acc)
-    optim = tb.AdamOptim(hyperparams)
+    optim = tb.RMSPropOptim(hyperparams)
     q_trainer = tb.Trainer(q_model, hyperparams, loss, optim, evaluator)
     agent = tb.DQNAgent(hyperparams, q_model, q_trainer)
     task = AtariTask(hyperparams, 'data/roms/breakout.bin')

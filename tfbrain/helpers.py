@@ -1,5 +1,9 @@
 import numpy as np
 
+import shelve
+
+import random
+
 import tensorflow as tf
 
 from memory_profiler import profile
@@ -195,3 +199,43 @@ def avg_over_batches(minibatches, fn):
             res += fn(batch)
             num_batches += 1
         return res / num_batches
+
+
+def rand_dict_sample(dictionary, num_samples, keys=None):
+    if keys is None:
+        keys = list(dictionary.keys())
+    indices = random.sample(range(len(keys)), num_samples)
+    sample = []
+    for index in indices:
+        sample.append(dictionary[keys[index]])
+    return sample
+
+
+class ShelfDeque(object):
+    def __init__(self, db_fnm, maxlen):
+        self.maxlen = maxlen
+        self.shelf = shelve.open(db_fnm)
+        self.num_items = 0
+        self.frontier = 0
+        self.keys = []
+
+    def append(self, item):
+        if self.num_items < self.maxlen:
+            self.shelf[str(self.num_items)] = item
+            self.keys.append(str(self.num_items))
+            self.num_items += 1
+        else:
+            self.shelf[str(self.frontier)] = item
+            self.frontier = (self.frontier + 1) % self.maxlen
+
+    def get(self, pos):
+        return self.shelf[str(pos)]
+
+    def __getitem__(self, arg):
+        return self.get(arg)
+
+    def __len__(self):
+        return self.num_items
+
+    def sample(self, num_samples):
+        return rand_dict_sample(self.shelf, num_samples, keys=self.keys)

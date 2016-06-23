@@ -1,7 +1,5 @@
 from ale_python_interface import ALEInterface
 
-import matplotlib.pyplot as plt
-
 import numpy as np
 
 from scipy.misc import imresize
@@ -15,11 +13,8 @@ class AtariTask(object):
         self.ale = ALEInterface()
         self.ale.setInt(b'random_seed', 123)
         self.ale.loadROM(str.encode(rom_fnm))
-        self.display_screen_every_time = False
         screen = self.ale.getScreenGrayscale()
-        print(screen.shape)
         screen = self.preprocess_screen(screen)
-        print(screen.shape)
         self.screen_shape = screen.shape
         self.state_shape = (self.state_len,) + \
             self.screen_shape
@@ -44,17 +39,7 @@ class AtariTask(object):
         for _ in range(self.state_len):
             self.states.append(np.zeros(self.screen_shape))
 
-    def display_screen(self):
-        screen = self.ale.getScreenRGB()
-        print(screen.shape)
-        print(screen)
-        plt.imshow(screen)
-        plt.show(block=True)
-        # self.display_screen = False
-
     def get_state(self):
-        if self.display_screen_every_time:
-            self.display_screen()
         self.states.pop(0)
         screen = self.ale.getScreenGrayscale()
         screen = self.preprocess_screen(screen)
