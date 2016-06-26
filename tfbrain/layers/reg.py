@@ -10,7 +10,7 @@ class DropoutLayer(Layer):
                  keep_prob,
                  **kwargs):
         Layer.__init__(self, [incoming], **kwargs)
-        self.output_shape = incoming.output_shape
+        self.output_shape = incoming.get_output_shape()
         self.keep_prob = keep_prob
         self.prob_var = tf.placeholder(tf.float32)
 

@@ -38,7 +38,8 @@ def get_all_params_copies(all_params):
         copies[layer_name] = {}
         for param_name in all_params[layer_name]:
             param = all_params[layer_name][param_name]
-            copies[layer_name][param_name] = tf.Variable(param.initialized_value())
+            copies[layer_name][param_name] = tf.Variable(
+                param.initialized_value())
     return copies
 
 
@@ -211,12 +212,44 @@ def rand_dict_sample(dictionary, num_samples, keys=None):
     return sample
 
 
-class ShelfDeque(object):
-    def __init__(self, db_fnm, maxlen):
+class NumpyDeque(object):
+    def __init__(self, item_shape, maxlen, **kwargs):
+        self.array = np.zeros((maxlen,) + item_shape, **kwargs)
         self.maxlen = maxlen
-        self.shelf = shelve.open(db_fnm)
         self.num_items = 0
         self.frontier = 0
+
+    def append(self, item):
+        if self.num_items < self.maxlen:
+            self.array[self.num_items] = item
+            self.num_items += 1
+        else:
+            self.array[self.frontier] = item
+            self.frontier = (self.frontier + 1) % self.maxlen
+
+    def get(self, pos):
+        return self.array[pos]
+
+    def __getitem__(self, arg):
+        return self.array[arg]
+
+    def __len__(self):
+        return self.num_items
+
+    def sample(self, sample_size):
+        keys = random.sample(range(self.num_items), sample_size)
+        return self.array[keys]
+
+
+class PersistentDeque(object):
+    def __init__(self, db_fnm, maxlen, cache_size, update_freq=100):
+        self.maxlen = maxlen
+        self.shelf = shelve.open(
+            db_fnm, writeback=True)
+        self.num_items = 0
+        self.frontier = 0
+        self.update_num = 0
+        self.update_freq = update_freq
         self.keys = []
 
     def append(self, item):
@@ -227,6 +260,9 @@ class ShelfDeque(object):
         else:
             self.shelf[str(self.frontier)] = item
             self.frontier = (self.frontier + 1) % self.maxlen
+        if self.update_num % self.update_freq == 0:
+            self.shelf.sync()
+        self.update_num += 1
 
     def get(self, pos):
         return self.shelf[str(pos)]

@@ -47,8 +47,8 @@ class MaxPool2DLayer(Layer):
                           pool_size,
                           inner_strides,
                           pad):
-        input_shape = incoming.output_shape
-        num_channels = incoming.output_shape[3]
+        input_shape = incoming.get_output_shape()
+        num_channels = incoming.get_output_shape()[3]
         output_height = pool_output_length(input_shape[1],
                                            pool_size[0],
                                            inner_strides[0],

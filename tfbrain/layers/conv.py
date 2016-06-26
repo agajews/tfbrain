@@ -35,7 +35,7 @@ class Conv2DLayer(Layer):
         Layer.__init__(self, [incoming], **kwargs)
 
         self.nonlin = nonlin
-        num_channels = incoming.output_shape[3]
+        num_channels = incoming.get_output_shape()[3]
         self.output_shape = self.calc_output_shape(incoming,
                                                    filter_size,
                                                    num_filters,
@@ -65,7 +65,7 @@ class Conv2DLayer(Layer):
                           inner_strides,
                           pad):
 
-        input_shape = incoming.output_shape
+        input_shape = incoming.get_output_shape()
         output_height = conv_output_length(input_shape[1],
                                            filter_size[0],
                                            inner_strides[0],

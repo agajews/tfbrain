@@ -23,7 +23,7 @@ class BasicRNNLayer(Layer):
                  b_o=None,
                  **kwargs):
         Layer.__init__(self, [incoming], **kwargs)
-        self.incoming_shape = incoming.output_shape
+        self.incoming_shape = incoming.get_output_shape()
         self.num_nodes = num_nodes
         self.nonlin_o = nonlin_o
         self.nonlin_h = nonlin_h
@@ -61,11 +61,11 @@ class BasicRNNLayer(Layer):
         return self.incoming_shape[:2] + (self.num_nodes,)
 
     def check_compatible(self, incoming):
-        if not len(incoming.output_shape) == 3:
+        if not len(incoming.get_output_shape()) == 3:
             raise Exception(('Incoming layer\'s output shape %s '
                              'incompatible, try passing it through '
                              'a ReshapeLayer or SequenceFlattenLayer first')
-                            % str(incoming.output_shape))
+                            % str(incoming.get_output_shape()))
 
     def get_base_name(self):
         return 'brnn'
@@ -139,7 +139,7 @@ class LSTMLayer(BasicRNNLayer):
                  **kwargs):
 
         Layer.__init__(self, [incoming], **kwargs)
-        self.incoming_shape = incoming.output_shape
+        self.incoming_shape = incoming.get_output_shape()
         self.num_nodes = num_nodes
         self.nonlin_i = nonlin_i
         self.nonlin_c = nonlin_c

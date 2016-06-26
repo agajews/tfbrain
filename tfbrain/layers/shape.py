@@ -11,7 +11,7 @@ class FlattenLayer(Layer):
                  incoming,
                  **kwargs):
         Layer.__init__(self, [incoming], **kwargs)
-        self.output_shape = self.flatten_shape(incoming.output_shape)
+        self.output_shape = self.flatten_shape(incoming.get_output_shape())
 
     def get_base_name(self):
         return 'flat'
@@ -49,7 +49,7 @@ class SeqSliceLayer(Layer):
                  col=-1,
                  **kwargs):
         Layer.__init__(self, [incoming], **kwargs)
-        incoming_shape = incoming.output_shape
+        incoming_shape = incoming.get_output_shape()
         self.incoming_shape = incoming_shape
         self.output_shape = incoming_shape[:1] + \
             incoming_shape[2:]
@@ -57,10 +57,10 @@ class SeqSliceLayer(Layer):
         self.col = col
 
     def check_compatible(self, incoming):
-        if not len(incoming.output_shape) == 3:
+        if not len(incoming.get_output_shape()) == 3:
             raise Exception(('Incoming layer\'s output shape %s '
                              'incompatible, this is only for sequences')
-                            % str(incoming.output_shape))
+                            % str(incoming.get_output_shape()))
 
     def get_base_name(self):
         return 'slice'
@@ -101,12 +101,12 @@ class MergeLayer(Layer):
         return 'merge'
 
     def calc_output_shape(self):
-        output_shape = list(self.incoming[0].output_shape)
+        output_shape = list(self.incoming[0].get_output_shape())
         output_shape[self.axis] = -1
-        axis_length = self.incoming[0].output_shape[self.axis]
+        axis_length = self.incoming[0].get_output_shape()[self.axis]
         for incoming in self.incoming[1:]:
             self.check_compatible(incoming, output_shape)
-            axis_length += incoming.output_shape[self.axis]
+            axis_length += incoming.get_output_shape()[self.axis]
 
         output_shape[self.axis] = axis_length
         return tuple(output_shape)

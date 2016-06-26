@@ -15,7 +15,7 @@ class EmbeddingLayer(Layer):
                  **kwargs):
         Layer.__init__(self, [incoming], **kwargs)
         self.num_nodes = num_nodes
-        self.output_shape = incoming.output_shape + (num_nodes,)
+        self.output_shape = incoming.get_output_shape() + (num_nodes,)
         E_shape = (num_cats, num_nodes)
         self.E = self.resolve_param(E, E_shape, E_init)
         self.params = {'E': self.E}

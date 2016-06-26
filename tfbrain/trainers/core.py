@@ -29,7 +29,7 @@ class Trainer(object):
         else:
             self.train_mask = None
         self.y = tf.placeholder(target_dtype,
-                                shape=self.model.net.output_shape)
+                                shape=self.model.get_net().get_output_shape())
 
     def build_eval(self):
         self.evaluator.build(self.model, self.y, self.train_mask)

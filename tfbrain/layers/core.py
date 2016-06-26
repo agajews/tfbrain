@@ -11,6 +11,9 @@ class Layer(object):
         self.gen_name(0)
         self.params = {}
 
+    def get_output_shape(self):
+        return self.output_shape
+
     def get_base_name(self):
         return 'layer'
 
@@ -91,7 +94,7 @@ class FullyConnectedLayer(Layer):
                  **kwargs):
         Layer.__init__(self, [incoming], **kwargs)
         self.check_compatible(incoming)
-        self.incoming_shape = incoming.output_shape
+        self.incoming_shape = incoming.get_output_shape()
 
         self.num_nodes = num_nodes
         self.nonlin = nonlin
@@ -106,11 +109,11 @@ class FullyConnectedLayer(Layer):
         return 'fc'
 
     def check_compatible(self, incoming):
-        if not len(incoming.output_shape) == 2:
+        if not len(incoming.get_output_shape()) == 2:
             raise Exception(('Incoming layer\'s output shape %s '
                              'incompatible, try passing it through '
                              'a FlattenLayer first')
-                            % str(incoming.output_shape))
+                            % str(incoming.get_output_shape()))
 
     def initialize_params(self, W, b, W_init, b_init):
         W_shape = (self.incoming_shape[1], self.num_nodes)
