@@ -25,7 +25,7 @@ class Trainer(object):
         if train_mask_shape is not None:
             self.train_mask = tf.placeholder(shape=train_mask_shape,
                                              dtype=tf.float32)
-            self.model.input_vars['mask'] = self.train_mask
+            self.model.get_input_vars()['mask'] = self.train_mask
         else:
             self.train_mask = None
         self.y = tf.placeholder(target_dtype,
@@ -38,7 +38,7 @@ class Trainer(object):
         self.train_step = self.optim.get_train_step(self.evaluator.loss.loss)
 
     def perform_update(self, batch):
-        feed_dict = create_x_feed_dict(self.model.input_vars, batch)
+        feed_dict = create_x_feed_dict(self.model.get_input_vars(), batch)
         feed_dict.update(create_y_feed_dict(self.y, batch['y']))
         feed_dict.update(create_supp_train_feed_dict(self.model))
         self.train_step.run(feed_dict=feed_dict)

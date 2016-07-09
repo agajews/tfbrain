@@ -2,7 +2,7 @@ import json
 
 from tfbrain.helpers import get_output, \
     create_x_feed_dict, create_supp_test_feed_dict, \
-    get_all_net_params_values
+    get_all_net_params_values, get_all_params
 
 from tasks import labels_to_one_hot
 
@@ -17,6 +17,9 @@ class Model(object):
 
     def get_net(self):
         return self.net
+
+    def get_input_vars(self):
+        return self.input_vars
 
     def update_hyperparams(self, update_dict):
         self.hyperparams.update(update_dict)
@@ -34,22 +37,38 @@ class Model(object):
         self.build_net()
         self.y_hat = get_output(self.get_net())
 
-    def compute_preds(self, xs):
+    def compute_preds(self, xs, sess):
         xs = self.pred_xs_preprocessor(xs)
         feed_dict = create_x_feed_dict(self.input_vars, xs)
         feed_dict.update(create_supp_test_feed_dict(self))
-        preds = self.y_hat.eval(feed_dict=feed_dict)
+        preds = self.y_hat.eval(feed_dict=feed_dict,
+                                session=sess)
         return preds
 
     def save_params(self, fnm, sess):
-        params_values = get_all_net_params_values(self.get_net(),
-                                                  sess=sess)
+        self._save_params(self.get_net(), fnm, sess)
+
+    def _save_params(self, net, fnm, sess):
+        params_values = get_all_net_params_values(net, sess=sess)
         for layer_name in params_values.keys():
             for param_name in params_values[layer_name].keys():
                 param = params_values[layer_name][param_name]
                 params_values[layer_name][param_name] = param.tolist()
         with open(fnm, 'w') as f:
             json.dump(params_values, f)
+
+    def load_params(self, fnm, sess):
+        self._load_params(self.get_net(), fnm, sess)
+
+    def _load_params(self, net, fnm, sess):
+        dest_params = get_all_params(net)
+        with open(fnm, 'r') as f:
+            src_params = json.loads(f.read())
+        for layer_name in dest_params.keys():
+            for param_name in dest_params[layer_name].keys():
+                dest_param = dest_params[layer_name][param_name]
+                src_param = src_params[layer_name][param_name]
+                sess.run(dest_param.assign(src_param))
 
 
 class UnhotYModel(Model):

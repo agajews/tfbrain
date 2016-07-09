@@ -25,3 +25,17 @@ class DropoutLayer(Layer):
 
     def get_supp_test_feed_dict(self):
         return {self.prob_var: 1.0}
+
+
+class ScaleLayer(Layer):
+
+    def __init__(self, incoming, scale, **kwargs):
+        Layer.__init__(self, [incoming], **kwargs)
+        self.scale = scale
+        self.output_shape = incoming.get_output_shape()
+
+    def get_base_name(self):
+        return 'scale'
+
+    def get_output(self, incoming_var):
+        return tf.to_float(incoming_var) * self.scale

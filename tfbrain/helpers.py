@@ -82,14 +82,13 @@ def set_all_params_values(net, params_values, sess=None):
             sess.run(assign_op)
 
 
-def set_all_params_ops(dest_params, src_params, sess=None):
-    sess = resolve_sess(sess)
+def set_all_params_ops(dest_params, src_params):
     ops = []
     for layer_name in dest_params:
         for param_name in dest_params[layer_name]:
-            param = dest_params[layer_name][param_name]
-            target_param = src_params[layer_name][param_name]
-            assign_op = param.assign(target_param)
+            dest_param = dest_params[layer_name][param_name]
+            src_param = src_params[layer_name][param_name]
+            assign_op = dest_param.assign(src_param)
             ops.append(assign_op)
     return ops
 
@@ -275,3 +274,14 @@ class PersistentDeque(object):
 
     def sample(self, num_samples):
         return rand_dict_sample(self.shelf, num_samples, keys=self.keys)
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'

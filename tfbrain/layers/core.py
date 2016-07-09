@@ -5,8 +5,9 @@ from tfbrain import nonlin, init
 
 class Layer(object):
 
-    def __init__(self, incoming_list, name=None):
+    def __init__(self, incoming_list, name=None, trainable=True):
         self.incoming = incoming_list
+        self.trainable = trainable
         self.chosen_name = name
         self.gen_name(0)
         self.params = {}
@@ -53,7 +54,8 @@ class Layer(object):
 
     def resolve_param(self, param, expected_shape, init):
         if param is None:
-            return tf.Variable(init(expected_shape))
+            return tf.Variable(init(expected_shape),
+                               trainable=self.trainable)
         else:
             assert tuple(param.get_shape().as_list()) == expected_shape
             return param
@@ -75,7 +77,8 @@ class InputLayer(Layer):
 
     def initialize_placeholder(self):
         self.placeholder = tf.placeholder(self.dtype,
-                                          shape=self.output_shape)
+                                          shape=self.output_shape,
+                                          name=self.name)
 
     def get_output(self, incoming_var):
         return self.placeholder
