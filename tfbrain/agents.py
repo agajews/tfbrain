@@ -74,6 +74,7 @@ class DQNAgent(object):
         self.update_target_weights_ops = set_all_params_ops(
             get_all_params(self.q_model.get_target_net()),
             get_all_params(self.q_model.get_net()))
+        self.update_target_weights()
 
     # def build_vars(self):
         # self.model_params = get_all_params(self.q_model.net)
@@ -217,10 +218,10 @@ class DQNAgent(object):
             train_y[experience_num] = target
             train_mask[experience_num, action] = 1
         self.target = target
-        # self.exp_returns = exp_returns
-        # self.mean_state_val = np.mean(np.array(
-        #     [s for (s, a, r, n) in experiences]))
-        # self.mean_preds = np.mean(preds)
+        self.exp_returns = exp_returns
+        self.mean_state_val = np.mean(np.array(
+            [s for (s, a, r, n) in experiences]))
+        self.mean_preds = np.mean(preds)
         # self.exp_pred_returns = self.compute_single_state_preds(
         #     experiences[-1][0]).max()
         # self.zero_pred_returns = self.compute_single_state_preds(
@@ -260,9 +261,9 @@ class DQNAgent(object):
         if display:
             # print('Loss: %f' % (sum(losses) / len(losses)))
             print('Target: %f' % self.target)
-            # print('Exp returns: %f' % self.exp_returns)
-            # print('Mean state val: %f' % self.mean_state_val)
-            # print('Mean preds: %f' % self.mean_preds)
+            print('Exp returns: %f' % self.exp_returns)
+            print('Mean state val: %f' % self.mean_state_val)
+            print('Mean preds: %f' % self.mean_preds)
             if self.greedy_ind is not None:
                 print('Greedy ind: %d' % self.greedy_ind)
                 self.greedy_ind = None

@@ -49,8 +49,10 @@ class Conv2DLayer(Layer):
         W_shape = filter_size + (num_channels, num_filters)
         b_shape = (num_filters,)
 
-        self.W = self.resolve_param(W, W_shape, W_init)
-        self.b = self.resolve_param(b, b_shape, b_init)
+        self.W, self.b = self.resolve_param_pair(W, W_shape, W_init,
+                                                 b, b_shape, b_init)
+        # self.W = self.resolve_param(W, W_shape, W_init)
+        # self.b = self.resolve_param(b, b_shape, b_init)
         self.params = {'W': self.W,
                        'b': self.b}
 

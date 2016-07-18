@@ -1,4 +1,4 @@
-from ale_python_interface import ALEInterface
+from ale_python_interface.ale_python_interface import ALEInterface
 
 # from tfbrain.helpers import bcolors
 
@@ -14,18 +14,26 @@ class AtariTask(object):
         self.hyperparams = hyperparams
         self.state_len = hyperparams['state_len']
         # self.screen_resize = hyperparams['screen_resize']
+        self.rom_fnm = rom_fnm
+        self.init_ale(display=False)
+        self.actions = self.ale.getMinimalActionSet()
+        print('Num possible actions: %d' % len(self.actions))
+        self.state_shape = (84, 84, self.state_len)
+
+    def init_ale(self, display=False):
         self.ale = ALEInterface()
         self.ale.setInt(b'random_seed', 123)
         self.ale.setFloat(b'repeat_action_probability', 0.0)
-        self.ale.loadROM(str.encode(rom_fnm))
-        self.actions = self.ale.getMinimalActionSet()
-        print('Num possible actions: %d' % len(self.actions))
-        self.set_screen_shape()
+        self.ale.setInt(b'frame_skip', self.hyperparams['frame_skip'])
+        if display:
+            self.ale.setBool(b'display_screen', True)
+        self.ale.loadROM(str.encode(self.rom_fnm))
 
-    def set_screen_shape(self):
-        self.start_episode()
-        self.perform_action(0)
-        self.state_shape = self.get_state().shape
+    # def set_screen_shape(self):
+    #     self.start_episode()
+    #     # self.perform_action(0)
+    #     self.state_shape = self.get_state().shape
+    #     print(self.state_shape)
         # self.prev_screen_rgb = self.ale.getScreenRGB()
         # screen = self.ale.getScreenRGB()
         # screen = self.preprocess_screen(screen)
@@ -74,10 +82,11 @@ class AtariTask(object):
     def perform_action(self, action_ind):
         # print(action_ind)
         action = self.actions[action_ind]
-        self.curr_reward = 0
-        for frame in range(self.hyperparams['frame_skip']):
-            self.prev_screen = self.ale.getScreenRGB()
-            self.curr_reward += self.ale.act(action)
+        # self.curr_reward = 0
+        # for frame in range(self.hyperparams['frame_skip']):
+        #     self.prev_screen = self.ale.getScreenRGB()
+        #     self.curr_reward += self.ale.act(action)
+        self.curr_reward = self.ale.act(action)
         self.episode_reward += self.curr_reward
         # if not self.curr_reward == 0:
         #     print(bcolors.WARNING +
@@ -92,9 +101,15 @@ class AtariTask(object):
             self.curr_reward = -1
         self.states = self.states[:3]
         screen = self.ale.getScreenRGB()
-        screen = np.maximum(screen, self.prev_screen)
+        # screen = np.maximum(screen, self.prev_screen)
         screen = self.preprocess_screen(screen)
         self.states.insert(0, screen)
+
+    def start_eval_mode(self):
+        self.init_ale(display=True)
+
+    def end_eval_mode(self):
+        self.init_ale(display=False)
 
     def get_reward(self):
         return self.curr_reward

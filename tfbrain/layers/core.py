@@ -60,6 +60,19 @@ class Layer(object):
             assert tuple(param.get_shape().as_list()) == expected_shape
             return param
 
+    def resolve_param_pair(self,
+                           W, W_shape, W_init,
+                           b, b_shape, b_init):
+        if W or b is None:
+            W = tf.Variable(W_init(W_shape, b_shape),
+                            trainable=self.trainable)
+            b = tf.Variable(b_init(W_shape, b_shape),
+                            trainable=self.trainable)
+        else:
+            assert tuple(W.get_shape().as_list()) == W_shape
+            assert tuple(b.get_shape().as_list()) == b_shape
+        return W, b
+
 
 class InputLayer(Layer):
 
@@ -122,8 +135,10 @@ class FullyConnectedLayer(Layer):
         W_shape = (self.incoming_shape[1], self.num_nodes)
         b_shape = (self.num_nodes,)
 
-        self.W = self.resolve_param(W, W_shape, W_init)
-        self.b = self.resolve_param(b, b_shape, b_init)
+        # self.W = self.resolve_param(W, W_shape, W_init)
+        # self.b = self.resolve_param(b, b_shape, b_init)
+        self.W, self.b = self.resolve_param_pair(W, W_shape, W_init,
+                                                 b, b_shape, b_init)
 
     def get_output(self, incoming_var):
         return self.nonlin(

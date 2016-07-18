@@ -43,34 +43,34 @@ class DQNModel(tb.Model):
         # net = tb.ly.ReshapeLayer(i_state, (-1,) + screen_size + (state_len,))
         net = tb.ly.Conv2DLayer(net, (8, 8), 32, inner_strides=(4, 4),
                                 W_init=tb.init.dqn_weight(),
-                                b_init=tb.init.constant(0.007),
+                                b_init=tb.init.dqn_bias(),
                                 pad='VALID',
                                 trainable=trainable)
         # curr_net = tb.ly.MaxPool2DLayer(curr_net, (2, 2),
         #                                 inner_strides=(2, 2))
         net = tb.ly.Conv2DLayer(net, (4, 4), 64, inner_strides=(2, 2),
                                 W_init=tb.init.dqn_weight(),
-                                b_init=tb.init.constant(0.007),
+                                b_init=tb.init.dqn_bias(),
                                 pad='VALID',
                                 trainable=trainable)
         # curr_net = tb.ly.MaxPool2DLayer(curr_net, (2, 2),
         #                                 inner_strides=(2, 2))
         net = tb.ly.Conv2DLayer(net, (3, 3), 64, inner_strides=(1, 1),
                                 W_init=tb.init.dqn_weight(),
-                                b_init=tb.init.constant(0.007),
+                                b_init=tb.init.dqn_bias(),
                                 pad='VALID',
                                 trainable=trainable)
         net = tb.ly.FlattenLayer(net)
         # net = tb.ly.MergeLayer(net, axis=1)
         net = tb.ly.FullyConnectedLayer(net, 512,
                                         W_init=tb.init.dqn_weight(),
-                                        b_init=tb.init.constant(0.007),
+                                        b_init=tb.init.dqn_bias(),
                                         trainable=trainable)
         # net = tb.ly.DropoutLayer(net, 0.5)
         net = tb.ly.FullyConnectedLayer(net,
                                         self.num_actions,
                                         W_init=tb.init.dqn_weight(),
-                                        b_init=tb.init.constant(0.007),
+                                        b_init=tb.init.dqn_bias(),
                                         nonlin=tb.nonlin.identity,
                                         trainable=trainable)
         return net, {'state': i_state.placeholder}
@@ -89,7 +89,7 @@ class DQNModel(tb.Model):
 
 def train_dqn():
     hyperparams = {'batch_size': 32,
-                   'init_explore_len': 50000,
+                   'init_explore_len': 500,
                    # 'init_explore_len': 50,
                    'learning_rate': 0.00025,
                    # 'grad_momentum': 0.0,
@@ -103,7 +103,7 @@ def train_dqn():
                    'display_freq': 25,
                    'updates_per_iter': 1,
                    'update_freq': 4,
-                   'frames_per_epoch': 100000,
+                   'frames_per_epoch': 1000,
                    # 'frames_per_epoch': 250,
                    'frames_per_eval': 50000,
                    # 'screen_resize': (110, 84),
@@ -124,7 +124,8 @@ def train_dqn():
     agent = tb.DQNAgent(hyperparams, q_model, optim, loss,
                         'params/breakout_dqn.json')
     task = AtariTask(hyperparams, 'data/roms/breakout.bin')
-    trainer = tb.RLTrainer(hyperparams, agent, task)
+    trainer = tb.RLTrainer(hyperparams, agent, task,
+                           load_first=True)
     trainer.train_by_epoch()
 
 if __name__ == '__main__':
