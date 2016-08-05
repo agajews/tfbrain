@@ -2,7 +2,7 @@ from collections import deque
 
 from tfbrain.helpers import create_x_feed_dict, \
     create_y_feed_dict, create_supp_train_feed_dict, \
-    create_supp_test_feed_dict
+    create_supp_test_feed_dict, softmax, flatten_params
 
 import tensorflow as tf
 
@@ -12,18 +12,23 @@ import numpy as np
 
 # from memory_profiler import profile
 
-from .helpers import get_all_params, \
+from tfbrain.helpers import get_all_params, \
     set_all_params_ops
-from .memory import ExperienceReplay
+from tfbrain.memory import ExperienceReplay
 
 
 class DQNAgent(object):
-    def __init__(self, hyperparams, q_model, optim, loss, param_fnm):
+    def __init__(self, hyperparams, q_model, optim, loss, param_fnm,
+                 dtype=np.uint8):
         self.hyperparams = hyperparams
         self.q_model = q_model
         self.optim = optim
         self.loss = loss
         self.param_fnm = param_fnm
+        self.dtype = dtype
+
+    def start_episode(self):
+        pass
 
     def set_actions(self, actions):
         self.actions = actions
@@ -60,6 +65,8 @@ class DQNAgent(object):
         self.train_step = self.optim.get_train_step(self.loss.loss)
         self.sess = tf.Session()
         self.sess.run(tf.initialize_all_variables())
+        # self.sess.run(tf.initialize_variables(flatten_params(
+        #     get_all_params(self.q_model.net))))
 
         self.prepare_epsilon()
         self.prepare_debug_vars()
@@ -68,36 +75,14 @@ class DQNAgent(object):
             maxlen=self.hyperparams['num_recent_steps'])
         self.recent_eval_q = deque(
             maxlen=self.hyperparams['num_recent_steps'])
-        self.experience_replay = ExperienceReplay(self.hyperparams)
+        self.experience_replay = ExperienceReplay(self.hyperparams,
+                                                  self.dtype)
         self.experience_replay.build()
 
         self.update_target_weights_ops = set_all_params_ops(
             get_all_params(self.q_model.get_target_net()),
             get_all_params(self.q_model.get_net()))
         self.update_target_weights()
-
-    # def build_vars(self):
-        # self.model_params = get_all_params(self.q_model.net)
-        # self.target_model_params = get_all_params_copies(self.model_params)
-        # self.update_target_weights_ops = set_all_params_ops(
-        #     self.target_model_params, self.model_params,
-        #     sess=self.sess)
-        # self.load_target_weights_ops = set_all_net_params_ops(
-        #     self.q_model.net, self.target_model_params,
-        #     sess=self.sess)
-        # self.load_model_weights_ops = set_all_net_params_ops(
-        #     self.q_model.net, self.model_params,
-        #     sess=self.sess)
-
-        # self.sess.run(tf.initialize_all_variables())
-
-        # self.update_target_weights_ops = set_all_params_ops(
-        #     get_all_params(self.q_model.get_target_net()),
-        #     get_all_params(self.q_model.get_net()))
-
-        # self.fc_l7_w = get_all_params(
-        #     self.q_model.get_target_net())['fc_l7']['W']
-        # self.update_target_weights()
 
     def save_params(self):
         self.q_model.save_params(self.param_fnm,
@@ -119,14 +104,6 @@ class DQNAgent(object):
         print('Updating target weights ...')
         self.sess.run(self.update_target_weights_ops[0:])
 
-    # def load_target_weights(self):
-    #     for op in self.load_target_weights_ops:
-    #         self.sess.run(op)
-
-    # def load_model_weights(self):
-    #     for op in self.load_model_weights_ops:
-    #         self.sess.run(op)
-
     def get_single_state_dict(self, single_state):
         xs = {'state': np.reshape(single_state, (1,) + single_state.shape)}
         return xs
@@ -143,13 +120,14 @@ class DQNAgent(object):
 
     def choose_greedy_action(self, state):
         preds = self.compute_single_state_preds(state)
+        self.preds = preds
         if self.training:
             self.recent_train_q.append(preds.max())
         else:
             self.recent_eval_q.append(preds.max())
         greedy_ind = np.argmax(np.squeeze(preds))
         self.greedy_ind = greedy_ind
-        return self.actions[greedy_ind]
+        return preds
 
     def display_from_action(self, step_num):
         if step_num % self.hyperparams['display_freq'] == 0:
@@ -159,7 +137,7 @@ class DQNAgent(object):
                 self.display_eval_update(step_num)
 
     def choose_random_action(self):
-        return random.choice(self.actions)
+        return softmax(np.expand_dims(np.random.randn(len(self.actions)), 0))
 
     def update_epsilon(self):
         if self.epsilon > self.hyperparams['epsilon'][1]:
@@ -179,7 +157,7 @@ class DQNAgent(object):
             return self.choose_greedy_action(state)
 
     def choose_action(self, state, step_num):
-        # self.display_from_action(step_num)
+        self.display_from_action(step_num)
         if self.training and step_num < self.hyperparams['init_explore_len']:
             self.update_epsilon()
             return self.choose_random_action()
@@ -216,7 +194,7 @@ class DQNAgent(object):
             exp_returns = np.max(preds[experience_num])
             target = reward + reward_discount * exp_returns
             train_y[experience_num] = target
-            train_mask[experience_num, action] = 1
+            train_mask[experience_num, np.argmax(action)] = 1
         self.target = target
         self.exp_returns = exp_returns
         self.mean_state_val = np.mean(np.array(
@@ -298,6 +276,8 @@ class DQNAgent(object):
         if len(self.recent_train_q) > 0:
             print('Avg recent pred q: %f' %
                   (sum(self.recent_train_q) / len(self.recent_train_q)))
+        if hasattr(self, 'preds'):
+            print('Preds: %s' % str(self.preds))
 
     def display_eval_update(self, step_num):
         print('Step %d' % step_num)
@@ -309,6 +289,8 @@ class DQNAgent(object):
             print('Avg recent pred q: %f' %
                   (sum(self.recent_eval_q) / len(self.recent_eval_q)))
             print('Current pred q: %f' % self.recent_eval_q[-1])
+        if hasattr(self, 'preds'):
+            print('Preds: %s' % str(self.preds))
 
     def learn(self, step_num):
         if step_num > self.hyperparams['init_explore_len']:
@@ -316,7 +298,8 @@ class DQNAgent(object):
                 display = True
             else:
                 display = False
-            self.train_net(display)
+            if step_num % self.hyperparams['update_freq'] == 0:
+                self.train_net(display)
 
         if step_num % self.hyperparams['target_update_freq'] == 0:
             self.update_target_weights()

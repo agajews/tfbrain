@@ -2,7 +2,8 @@ import json
 
 from tfbrain.helpers import get_output, \
     create_x_feed_dict, create_supp_test_feed_dict, \
-    get_all_net_params_values, get_all_params
+    get_all_net_params_values, get_all_params, \
+    get_input_vars
 
 from tasks import labels_to_one_hot
 
@@ -35,6 +36,7 @@ class Model(object):
 
     def setup_net(self):
         self.build_net()
+        self.input_vars = get_input_vars(self.get_net())
         self.y_hat = get_output(self.get_net())
 
     def compute_preds(self, xs, sess):
@@ -100,3 +102,49 @@ class UnhotXYModel(Model):
         for x_name in self.input_vars:
             xs[x_name] = labels_to_one_hot(xs[x_name], self.num_cats)
         return xs
+
+
+class RLModel(Model):
+
+    def set_state_shape(self, state_shape):
+        self.state_shape = state_shape
+
+    def set_num_actions(self, num_actions):
+        self.num_actions = num_actions
+
+    def build_net(self):
+        self.net = self.create_net()
+
+
+class DQNModel(RLModel):
+
+    def get_target_net(self):
+        return self.target_net
+
+    def get_target_input_vars(self):
+        return self.target_input_vars
+
+    def setup_net(self):
+        self.build_net()
+        self.y_hat = get_output(self.get_net())
+        self.target_y_hat = get_output(self.get_target_net())
+
+    def compute_target_preds(self, xs, sess):
+        xs = self.pred_xs_preprocessor(xs)
+        feed_dict = create_x_feed_dict(self.target_input_vars, xs)
+        feed_dict.update(create_supp_test_feed_dict(self))
+        preds = self.target_y_hat.eval(feed_dict=feed_dict,
+                                       session=sess)
+        return preds
+
+    def build_net(self):
+        self.net = self.create_net()
+        self.input_vars = get_input_vars(self.net)
+        self.target_net = self.create_net(trainable=False)
+        self.target_input_vars = get_input_vars(self.target_net)
+
+    def load_target_params(self, fnm, sess):
+        self._load_params(self.get_target_net(), fnm, sess)
+
+    def save_target_params(self, fnm, sess):
+        self._save_params(self.get_target_net(), fnm, sess)

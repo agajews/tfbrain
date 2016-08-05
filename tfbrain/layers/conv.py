@@ -29,6 +29,7 @@ class Conv2DLayer(Layer):
                  nonlin=nonlin.relu,
                  W_init=init.truncated_normal(),
                  b_init=init.constant(),
+                 W_b_init=None,
                  W=None,
                  b=None,
                  **kwargs):
@@ -42,6 +43,7 @@ class Conv2DLayer(Layer):
                                                    num_channels,
                                                    inner_strides,
                                                    pad)
+        print(self.output_shape)
 
         self.strides = (1,) + inner_strides + (1,)
         self.pad = pad
@@ -49,12 +51,27 @@ class Conv2DLayer(Layer):
         W_shape = filter_size + (num_channels, num_filters)
         b_shape = (num_filters,)
 
-        self.W, self.b = self.resolve_param_pair(W, W_shape, W_init,
-                                                 b, b_shape, b_init)
+        if W_b_init is not None:
+            self.W, self.b = self.resolve_param_pair(W, W_shape,
+                                                     b, b_shape,
+                                                     W_b_init)
+        else:
+            self.W = self.resolve_param(W, W_shape, W_init)
+            self.b = self.resolve_param(b, b_shape, b_init)
+
+        print(self.b.get_shape())
         # self.W = self.resolve_param(W, W_shape, W_init)
         # self.b = self.resolve_param(b, b_shape, b_init)
         self.params = {'W': self.W,
                        'b': self.b}
+        self.config.update({'filter_size': filter_size,
+                            'num_filters': num_filters,
+                            'inner_strides': inner_strides,
+                            'pad': pad,
+                            'nonlin': nonlin,
+                            'W_init': W_init,
+                            'b_init': b_init,
+                            'W_b_init': W_b_init})
 
     def get_base_name(self):
         return 'conv2d'
@@ -80,7 +97,7 @@ class Conv2DLayer(Layer):
                 output_height, output_width,
                 num_filters)
 
-    def get_output(self, incoming_var):
+    def get_output(self, incoming_var, **kwargs):
         conv = tf.nn.conv2d(incoming_var,
                             self.W,
                             strides=self.strides,

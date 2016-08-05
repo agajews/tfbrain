@@ -6,7 +6,8 @@ from tasks.mnist import load_data
 class MnistConvModel(tb.Model):
 
     def build_net(self):
-        i_image = tb.ly.InputLayer(shape=(None, 784))
+        i_image = tb.ly.InputLayer(shape=(None, 784),
+                                   name='image')
         net = tb.ly.ReshapeLayer(i_image, shape=(None, 28, 28, 1))
         net = tb.ly.Conv2DLayer(net, (5, 5), 32)
         net = tb.ly.MaxPool2DLayer(net, (2, 2), inner_strides=(2, 2))
@@ -17,7 +18,6 @@ class MnistConvModel(tb.Model):
         net = tb.ly.DropoutLayer(net, 0.5)
         net = tb.ly.FullyConnectedLayer(net, 10, nonlin=tb.nonlin.softmax)
         self.net = net
-        self.input_vars = {'image': i_image.placeholder}
 
 
 def train_conv():

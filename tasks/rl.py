@@ -12,10 +12,11 @@ from scipy import ndimage
 class AtariTask(object):
     def __init__(self, hyperparams, rom_fnm):
         self.hyperparams = hyperparams
+        self.show_screen = hyperparams['show_screen']
         self.state_len = hyperparams['state_len']
         # self.screen_resize = hyperparams['screen_resize']
         self.rom_fnm = rom_fnm
-        self.init_ale(display=False)
+        self.init_ale(display=self.show_screen)
         self.actions = self.ale.getMinimalActionSet()
         print('Num possible actions: %d' % len(self.actions))
         self.state_shape = (84, 84, self.state_len)
@@ -23,6 +24,7 @@ class AtariTask(object):
     def init_ale(self, display=False):
         self.ale = ALEInterface()
         self.ale.setInt(b'random_seed', 123)
+        # self.ale.setInt(b'delay_msec', 0)
         self.ale.setFloat(b'repeat_action_probability', 0.0)
         self.ale.setInt(b'frame_skip', self.hyperparams['frame_skip'])
         if display:
@@ -52,7 +54,8 @@ class AtariTask(object):
             screen_rgb, np.array([.299, .587, .114])).astype(np.uint8)
         screen = ndimage.zoom(screen, (0.4, 0.525))
         screen.resize((84, 84))
-        return screen
+        # screen = screen / 255.0
+        return np.array(screen)
 
     def get_state_shape(self):
         return self.state_shape
@@ -79,9 +82,9 @@ class AtariTask(object):
         #     curr_state[i] = self.states[i]
         # return curr_state
 
-    def perform_action(self, action_ind):
+    def perform_action(self, action_dist):
         # print(action_ind)
-        action = self.actions[action_ind]
+        action = self.actions[np.argmax(action_dist)]
         # self.curr_reward = 0
         # for frame in range(self.hyperparams['frame_skip']):
         #     self.prev_screen = self.ale.getScreenRGB()
@@ -99,17 +102,19 @@ class AtariTask(object):
             #       bcolors.ENDC)
         elif self.curr_reward < 0:
             self.curr_reward = -1
-        self.states = self.states[:3]
         screen = self.ale.getScreenRGB()
         # screen = np.maximum(screen, self.prev_screen)
         screen = self.preprocess_screen(screen)
+        self.states = self.states[:self.state_len - 1]
         self.states.insert(0, screen)
 
     def start_eval_mode(self):
-        self.init_ale(display=True)
+        # self.init_ale(display=self.show_screen)
+        pass
 
     def end_eval_mode(self):
-        self.init_ale(display=False)
+        # self.init_ale(display=False)
+        pass
 
     def get_reward(self):
         return self.curr_reward

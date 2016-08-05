@@ -7,4 +7,4 @@ from .models import *
 from .optim import *
 from .dtypes import *
 from .agents import *
-from .rl_trainers import *
+from .helpers import *

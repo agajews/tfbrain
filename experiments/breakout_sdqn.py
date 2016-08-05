@@ -47,32 +47,32 @@ class BreakoutModel(tb.DQNModel):
 
 def train_dqn():
     hyperparams = {'batch_size': 32,
-                   'init_explore_len': 500,
+                   # 'init_explore_len': 500,
                    # 'init_explore_len': 50,
                    'learning_rate': 0.00025,
                    # 'grad_momentum': 0.0,
                    'grad_decay': 0.95,
                    'grad_epsilon': 0.01,
                    # 'grad_norm_clip': 5,
-                   'epsilon': (1.0, 0.1, 1000000),
+                   'epsilon': (1.0, 0.1, 4000000),
                    'frame_skip': 4,
                    'reward_discount': 0.99,
-                   'show_screen': True,
-                   'target_update_freq': 10000,
-                   'display_freq': 25,
-                   'updates_per_iter': 1,
+                   'show_screen': False,
+                   # 'target_update_freq': 10000,
+                   'display_freq': 100,
+                   'updates_per_iter': 50000,
                    'update_freq': 4,
-                   'frames_per_epoch': 1000,
+                   'frames_per_epoch': 100000,
                    # 'frames_per_epoch': 250,
-                   'frames_per_eval': 50000,
+                   'frames_per_eval': 25000,
                    # 'screen_resize': (110, 84),
-                   'experience_replay_len': 1000000,
+                   'experience_replay_len': 1000000,  # just for the api
                    # 'cache_size': int(2e4),
                    'state_len': 4,
                    # 'num_frames': 10000000,
                    # 'save_freq': 100000,
                    # 'eval_freq': 10,
-                   'num_epochs': 200,  # 1e7 frames
+                   'num_epochs': 400,  # 1e7 frames
                    'eval_epsilon': 0.05,
                    'num_recent_episodes': 100,
                    'num_recent_steps': 10000}
@@ -80,8 +80,8 @@ def train_dqn():
     loss = tb.MSE(hyperparams)
     optim = tb.RMSPropOptim(hyperparams)
     # q_trainer = tb.Trainer(q_model, hyperparams, loss, optim, evaluator)
-    agent = tb.DQNAgent(hyperparams, q_model, optim, loss,
-                        'params/breakout_dqn.json')
+    agent = tb.SDQNAgent(hyperparams, q_model, optim, loss,
+                         'params/breakout_sdqn.json')
     task = AtariTask(hyperparams, 'data/roms/breakout.bin')
     trainer = tb.RLTrainer(hyperparams, agent, task,
                            load_first=False)

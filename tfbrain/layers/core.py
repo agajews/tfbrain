@@ -11,6 +11,16 @@ class Layer(object):
         self.chosen_name = name
         self.gen_name(0)
         self.params = {}
+        self.config = {'name': name}
+
+    def get_params(self):
+        return self.params
+
+    def get_trainable_params(self):
+        if self.trainable:
+            return self.params
+        else:
+            return {}
 
     def get_output_shape(self):
         return self.output_shape
@@ -32,7 +42,10 @@ class Layer(object):
         else:
             self.name = self.chosen_name
 
-    def get_output(self, incoming_var):
+    def get_name(self):
+        return self.name
+
+    def get_output(self, incoming_var, **kwargs):
         '''This method takes a TF variable
         (presumably the output from the current
         layer's incoming layer, but not necessarily)
@@ -61,17 +74,29 @@ class Layer(object):
             return param
 
     def resolve_param_pair(self,
-                           W, W_shape, W_init,
-                           b, b_shape, b_init):
+                           W, W_shape,
+                           b, b_shape,
+                           W_b_init):
         if W or b is None:
-            W = tf.Variable(W_init(W_shape, b_shape),
-                            trainable=self.trainable)
-            b = tf.Variable(b_init(W_shape, b_shape),
-                            trainable=self.trainable)
+            W, b = W_b_init(W_shape, b_shape)
+            W = tf.Variable(W, trainable=self.trainable)
+            b = tf.Variable(b, trainable=self.trainable)
         else:
             assert tuple(W.get_shape().as_list()) == W_shape
             assert tuple(b.get_shape().as_list()) == b_shape
         return W, b
+
+    def get_input_hidden_var(self, **kwargs):
+        return None
+
+    def get_output_hidden_var(self, **kwargs):
+        return None
+
+    def get_init_hidden(self):
+        return None
+
+    def get_assign_hidden_op(self, **kwargs):
+        return None
 
 
 class InputLayer(Layer):
@@ -79,11 +104,20 @@ class InputLayer(Layer):
     def __init__(self,
                  shape,
                  dtype=tf.float32,
+                 passthrough=None,
                  **kwargs):
         Layer.__init__(self, [], **kwargs)
-        self.dtype = dtype
-        self.output_shape = shape
-        self.initialize_placeholder()
+        if passthrough is None:
+            self.dtype = dtype
+            self.output_shape = shape
+            self.initialize_placeholder()
+        else:
+            self.placeholder = passthrough
+            self.output_shape = passthrough.get_shape().as_list()
+            print('passthrough output shape')
+            print(self.output_shape)
+        self.config.update({'shape': shape,
+                            'dtype': dtype})
 
     def get_base_name(self):
         return 'input'
@@ -93,8 +127,12 @@ class InputLayer(Layer):
                                           shape=self.output_shape,
                                           name=self.name)
 
-    def get_output(self, incoming_var):
-        return self.placeholder
+    def get_output(self, incoming_var, **kwargs):
+        if incoming_var is None:
+            print('%s using placeholder' % self.get_name())
+            return self.placeholder
+        else:
+            return incoming_var
 
 
 class FullyConnectedLayer(Layer):
@@ -105,6 +143,7 @@ class FullyConnectedLayer(Layer):
                  nonlin=nonlin.relu,
                  W_init=init.truncated_normal(),
                  b_init=init.constant(),
+                 W_b_init=None,
                  W=None,
                  b=None,
                  **kwargs):
@@ -115,9 +154,13 @@ class FullyConnectedLayer(Layer):
         self.num_nodes = num_nodes
         self.nonlin = nonlin
 
-        self.initialize_params(W, b, W_init, b_init)
+        self.initialize_params(W, b, W_init, b_init, W_b_init)
         self.params = {'W': self.W,
                        'b': self.b}
+        self.config.update({'num_nodes': num_nodes,
+                            'nonlin': nonlin,
+                            'W_init': W_init,
+                            'b_init': b_init})
 
         self.output_shape = (None, num_nodes)
 
@@ -131,15 +174,18 @@ class FullyConnectedLayer(Layer):
                              'a FlattenLayer first')
                             % str(incoming.get_output_shape()))
 
-    def initialize_params(self, W, b, W_init, b_init):
+    def initialize_params(self, W, b, W_init, b_init, W_b_init):
         W_shape = (self.incoming_shape[1], self.num_nodes)
         b_shape = (self.num_nodes,)
 
-        # self.W = self.resolve_param(W, W_shape, W_init)
-        # self.b = self.resolve_param(b, b_shape, b_init)
-        self.W, self.b = self.resolve_param_pair(W, W_shape, W_init,
-                                                 b, b_shape, b_init)
+        if W_b_init is not None:
+            self.W, self.b = self.resolve_param_pair(W, W_shape,
+                                                     b, b_shape,
+                                                     W_b_init)
+        else:
+            self.W = self.resolve_param(W, W_shape, W_init)
+            self.b = self.resolve_param(b, b_shape, b_init)
 
-    def get_output(self, incoming_var):
+    def get_output(self, incoming_var, **kwargs):
         return self.nonlin(
             tf.matmul(incoming_var, self.W) + self.b)

@@ -12,8 +12,9 @@ class Optimizer(object):
 
 class SGDOptim(Optimizer):
 
-    def get_train_step(self, loss_val):
-        tvars = tf.trainable_variables()
+    def get_train_step(self, loss_val, tvars=None):
+        if tvars is None:
+            tvars = tf.trainable_variables()
         grads = tf.gradients(loss_val, tvars,
                              name='get_grads')
         if 'grad_norm_clip' in self.hyperparams:
@@ -26,13 +27,16 @@ class SGDOptim(Optimizer):
 
 class AdamOptim(Optimizer):
 
-    def get_train_step(self, loss_val):
-        tvars = tf.trainable_variables()
-        grads, _ = tf.clip_by_global_norm(tf.gradients(loss_val, tvars),
-                                          self.hyperparams['grad_norm_clip'])
+    def get_train_step(self, loss_val, tvars=None):
+        if tvars is None:
+            tvars = tf.trainable_variables()
+        print(loss_val)
         optimizer = tf.train.AdamOptimizer(
             self.hyperparams['learning_rate'])
-        return optimizer.apply_gradients(zip(grads, tvars))
+        # grads_and_vars = optimizer.compute_gradients(loss_val, var_list=tvars),
+        # print(grads_and_vars[0])
+        # return optimizer.apply_gradients(grads_and_vars[0])
+        return optimizer.minimize(loss_val, var_list=tvars)
 
 
 # class RMSPropOptim(Optimizer):
@@ -55,10 +59,12 @@ class AdamOptim(Optimizer):
 
 class RMSPropOptim(Optimizer):
 
-    def get_train_step(self, loss):
+    def get_train_step(self, loss, tvars=None):
+        if tvars is None:
+            tvars = tf.trainable_variables()
         optimizer = tf.train.RMSPropOptimizer(
             self.hyperparams['learning_rate'],
             decay=self.hyperparams['grad_decay'],
             epsilon=self.hyperparams['grad_epsilon'],
             name='rmsprop_optim')
-        return optimizer.minimize(loss)
+        return optimizer.minimize(loss, var_list=tvars)

@@ -19,9 +19,12 @@ class EmbeddingLayer(Layer):
         E_shape = (num_cats, num_nodes)
         self.E = self.resolve_param(E, E_shape, E_init)
         self.params = {'E': self.E}
+        self.config.update({'num_nodes': num_nodes,
+                            'num_cats': num_cats,
+                            'E_init': E_init})
 
     def get_base_name(self):
         return 'emb'
 
-    def get_output(self, incoming_var):
+    def get_output(self, incoming_var, **kwargs):
         return tf.nn.embedding_lookup(self.E, incoming_var)

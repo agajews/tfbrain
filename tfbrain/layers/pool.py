@@ -38,6 +38,9 @@ class MaxPool2DLayer(Layer):
         self.pool_size = (1,) + pool_size + (1,)
         self.strides = (1,) + inner_strides + (1,)
         self.pad = pad
+        self.config.update({'pool_size': pool_size,
+                            'inner_strides': inner_strides,
+                            'pad': pad})
 
     def get_base_name(self):
         return 'pool2d'
@@ -59,7 +62,7 @@ class MaxPool2DLayer(Layer):
                                           pad)
         return (None, output_height, output_width, num_channels)
 
-    def get_output(self, incoming_var):
+    def get_output(self, incoming_var, **kwargs):
         return tf.nn.max_pool(incoming_var,
                               ksize=self.pool_size,
                               strides=self.strides,

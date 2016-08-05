@@ -21,7 +21,7 @@ class FlattenLayer(Layer):
                 reduce(lambda x, y: x * y,
                        shape[1:]))
 
-    def get_output(self, incoming_var):
+    def get_output(self, incoming_var, **kwargs):
         return tf.reshape(incoming_var, (-1,) + self.output_shape[1:])
 
 
@@ -34,12 +34,51 @@ class ReshapeLayer(Layer):
         Layer.__init__(self, [incoming], **kwargs)
         self.output_shape = list(map(lambda d: d if d is not None else -1,
                                      shape))
+        self.config.update({'shape': shape})
 
     def get_base_name(self):
         return 'reshape'
 
-    def get_output(self, incoming_var):
+    def get_output(self, incoming_var, **kwargs):
         return tf.reshape(incoming_var, self.output_shape)
+
+
+class TransposeLayer(Layer):
+
+    def __init__(self,
+                 incoming,
+                 perm,
+                 **kwargs):
+        Layer.__init__(self, [incoming], **kwargs)
+        in_shape = incoming.get_output_shape()
+        self.output_shape = [in_shape[i] for i in perm]
+        self.perm = perm
+        self.config.update({'perm': perm})
+
+    def get_base_name(self):
+        return 'transpose'
+
+    def get_output(self, incoming_var, **kwargs):
+        return tf.transpose(incoming_var, self.perm)
+
+
+class SqueezeLayer(Layer):
+
+    def __init__(self,
+                 incoming,
+                 dim,
+                 **kwargs):
+        Layer.__init__(self, [incoming], **kwargs)
+        in_shape = incoming.get_output_shape()
+        self.output_shape = in_shape[:dim] + in_shape[dim + 1:]
+        self.dim = dim
+        self.config.update({'dim': dim})
+
+    def get_base_name(self):
+        return 'squeeze'
+
+    def get_output(self, incoming_var, **kwargs):
+        return tf.squeeze(incoming_var, [self.dim])
 
 
 class SeqSliceLayer(Layer):
@@ -55,6 +94,7 @@ class SeqSliceLayer(Layer):
             incoming_shape[2:]
         # self.check_compatible(incoming)
         self.col = col
+        self.config.update({'col': col})
 
     def check_compatible(self, incoming):
         if not len(incoming.get_output_shape()) == 3:
@@ -65,7 +105,7 @@ class SeqSliceLayer(Layer):
     def get_base_name(self):
         return 'slice'
 
-    def get_output(self, incoming_var):
+    def get_output(self, incoming_var, **kwargs):
         if self.col == -1:
             incoming_var = tf.reverse(
                 incoming_var,
@@ -96,6 +136,7 @@ class MergeLayer(Layer):
         Layer.__init__(self, incoming_list, **kwargs)
         self.axis = axis
         self.output_shape = self.calc_output_shape()
+        self.config.update({'axis': axis})
 
     def get_base_name(self):
         return 'merge'
@@ -116,5 +157,5 @@ class MergeLayer(Layer):
         incoming_shape[self.axis] = -1
         assert incoming_shape == output_shape
 
-    def get_output(self, *incoming_vars):
+    def get_output(self, *incoming_vars, **kwargs):
         return tf.concat(self.axis, incoming_vars)
