@@ -116,6 +116,57 @@ class RLModel(Model):
         self.net = self.create_net()
 
 
+class ACModel(RLModel):
+
+    def build_net(self):
+        self.state_processor = self.create_state_processor()
+        self.policy = self.create_policy()
+        self.value = self.create_value()
+
+    def setup_net(self):
+        self.build_net()
+        self.policy_y_hat = get_output(self.policy)
+        self.value_y_hat = get_output(self.value)
+        self.policy_input_vars = get_input_vars(self.policy)
+        self.value_input_vars = get_input_vars(self.value)
+
+    def compute_policy_preds(self, xs, sess):
+        return self._compute_preds(self.policy_y_hat, self.policy_input_vars,
+                                   xs, sess)
+
+    def compute_value_preds(self, xs, sess):
+        return self._compute_preds(self.value_y_hat, self.value_input_vars,
+                                   xs, sess)
+
+    def _compute_preds(self, y_hat, input_vars, xs, sess):
+        xs = self.pred_xs_preprocessor(xs)
+        feed_dict = create_x_feed_dict(input_vars, xs)
+        # feed_dict.update(create_supp_test_feed_dict(self))
+        preds = y_hat.eval(feed_dict=feed_dict,
+                           session=sess)
+        return preds
+
+    def load_params(self, fnm, sess):
+        self.load_policy_params(fnm, sess)
+        self.load_value_params(fnm, sess)
+
+    def save_params(self, fnm, sess):
+        self.save_policy_params(fnm, sess)
+        self.save_value_params(fnm, sess)
+
+    def load_policy_params(self, fnm, sess):
+        self._load_params(self.policy, fnm, sess)
+
+    def save_policy_params(self, fnm, sess):
+        self._save_params(self.policy, fnm, sess)
+
+    def load_value_params(self, fnm, sess):
+        self._load_params(self.value, fnm, sess)
+
+    def save_value_params(self, fnm, sess):
+        self._save_params(self.value, fnm, sess)
+
+
 class DQNModel(RLModel):
 
     def get_target_net(self):

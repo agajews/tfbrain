@@ -32,6 +32,29 @@ class MSE(Loss):
         else:
             # y_masked = tf.reduce_sum(y * mask,
             #                          reduction_indices=[1])
+            # y_hat_masked = tf.reduce_sum(y_hat * mask,
+            #                              reduction_indices=[1])
+            # difference = tf.abs(y - y_hat_masked)
+            # quadratic_part = tf.clip_by_value(difference, 0.0, 1.0)
+            # linear_part = tf.sub(difference, quadratic_part)
+            # errors = (0.5 * tf.square(quadratic_part)) + linear_part
+            # self.loss = tf.reduce_sum(errors)
+            self.loss = tf.reduce_mean(
+                tf.square(tf.reduce_sum(mask * y_hat,
+                                        reduction_indices=[1]) - y))
+
+        return self.loss
+
+
+class MSEDQN(Loss):
+
+    def build(self, y_hat, y, mask=None):
+        if mask is None:
+            self.loss = tf.reduce_mean(
+                tf.square(y - y_hat))
+        else:
+            # y_masked = tf.reduce_sum(y * mask,
+            #                          reduction_indices=[1])
             y_hat_masked = tf.reduce_sum(y_hat * mask,
                                          reduction_indices=[1])
             difference = tf.abs(y - y_hat_masked)
@@ -40,8 +63,8 @@ class MSE(Loss):
             errors = (0.5 * tf.square(quadratic_part)) + linear_part
             self.loss = tf.reduce_sum(errors)
             # self.loss = tf.reduce_mean(
-            #     tf.reduce_sum(tf.square(mask * y - y_hat),
-            #                   reduction_indices=[1]))
+            #     tf.square(tf.reduce_sum(mask * y_hat,
+            #                             reduction_indices=[1]) - y))
 
         return self.loss
 

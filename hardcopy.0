@@ -1,0 +1,53 @@
+Greedy ind: 0
+Avg recent pred q: 0.024278
+Current pred q: 0.024815
+Preds: [[ 0.02481537  0.02273476 -0.00931659 -0.01549527]]
+Current pred q: 0.068957
+Preds: [[-0.05687682 -0.00071435  0.06895691  0.00298602]]
+Step 400
+Epsilon: 0.050000
+Greedy ind: 3
+Avg recent pred q: 0.025093
+Current pred q: 0.024598
+Preds: [[-0.04749871 -0.0455436  -0.03310816  0.02459819]]
+[[[ Episode finished with reward 0.000000 ]]]
+Step 400
+Epsilon: 0.050000
+Greedy ind: 3
+Avg recent pred q: 0.036148
+Current pred q: 0.036058
+Preds: [[-0.0482226  -0.05557879 -0.05362853  0.03605765]]
+Step 400
+Epsilon: 0.050000
+Step 400
+Epsilon: 0.050000
+Greedy ind: 2
+Avg recent pred q: 0.034069
+Current pred q: 0.033247
+Greedy ind: 1
+Avg recent pred q: 0.001572
+Current pred q: 0.001167
+Preds: [[-0.06129238  0.00116657 -0.01596203 -0.06289987]]
+Preds: [[ 0.01018784 -0.03875683  0.03324728  0.0011674 ]]
+Step 400
+Epsilon: 0.050000
+Greedy ind: 1
+Avg recent pred q: 0.040240
+Current pred q: 0.041275
+Preds: [[ 0.00440985  0.04127487  0.00131794 -0.01536552]]
+Step 400
+Epsilon: 0.050000
+Greedy ind: 1
+Avg recent pred q: 0.037172
+Current pred q: 0.038288
+Preds: [[-0.04967593  0.03828808 -0.02327304  0.01054396]]
+Step 400
+Epsilon: 0.050000
+Greedy ind: 2
+Avg recent pred q: 0.045241
+Current pred q: 0.044962
+Preds: [[-0.01253021 -0.05323192  0.0449619  -0.0445316 ]]
+[[[ Episode finished with reward 2.000000 ]]]
+[[[ Episode finished with reward 0.000000 ]]]
+[[[ Episode finished with reward 2.000000 ]]]
+
